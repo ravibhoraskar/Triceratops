@@ -1,6 +1,5 @@
 package instrumentation;
 
-import instrumentation.DFS.PrintAssignments;
 import japa.parser.JavaParser;
 import japa.parser.ast.CompilationUnit;
 import japa.parser.ast.body.MethodDeclaration;
@@ -8,6 +7,7 @@ import japa.parser.ast.stmt.BlockStmt;
 import japa.parser.ast.stmt.Statement;
 import japa.parser.ast.visitor.VoidVisitorAdapter;
 
+import java.util.List;
 import java.io.FileInputStream;
 
 public class CuPrinter {
@@ -50,8 +50,8 @@ public class CuPrinter {
             BlockStmt body = n.getBody();
             
             DFS dfs = new DFS();
-            Statement s =  dfs.DepthFirstTraversal(body,  new DFS.PrintDeclarations());
-//            System.out.println(s.toString());
+            List<Statement> s =  dfs.DepthFirstTraversal(body,  new DFS.PrintDeclarations());
+            System.out.println(s.toString());
                    
         }
         

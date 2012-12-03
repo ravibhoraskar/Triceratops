@@ -56,8 +56,8 @@ public class Triceratops {
         public void visit(MethodDeclaration n, Object arg) {
             BlockStmt body = n.getBody();            
             DFS dfs = new DFS();
-            Statement newbody =  dfs.DepthFirstTraversal(body, stmtfunc);
-            n.setBody((BlockStmt)newbody);
+            List<Statement> newbody =  dfs.DepthFirstTraversal(body, stmtfunc);
+            n.setBody(new BlockStmt(newbody));
         }
         
     }
@@ -67,7 +67,7 @@ public class Triceratops {
     	List<String> restricedFunctions;
     	List<String> validateFunctions;
 		@Override
-		public Statement function(Statement s) {
+		public List<Statement> function(Statement s) {
 			if(s.getClass()==ExpressionStmt.class)
 			{
 				Expression e = ((ExpressionStmt)s).getExpression();
@@ -87,7 +87,7 @@ public class Triceratops {
 			}
 			
 			//If none of the above is satisfied
-			return s;
+			return DFS.listify(s);
 			
 		}
     	

@@ -23,7 +23,7 @@ import java.util.List;
 public class DFS {
     
 	public interface StatementFunction {
-    	Statement function(Statement s);
+    	List<Statement> function(Statement s);
     }
 	
 	public interface ExpressionFunction {
@@ -40,35 +40,44 @@ public class DFS {
 	
 
 
-	public Statement DepthFirstTraversal(Statement statement, StatementFunction stmtfunc, ExpressionFunction expfunc)
+	public List<Statement> DepthFirstTraversal(Statement statement, StatementFunction stmtfunc, ExpressionFunction expfunc)
     {
     	if (statement == null) return null;
     	else if(statement.getClass()==BlockStmt.class)
     	{
     		BlockStmt bstmt = (BlockStmt) statement;
     		if(bstmt.getStmts()==null) 
-    			return new BlockStmt();
+    		{
+    			List<Statement> toReturn = new ArrayList<Statement>();
+    			toReturn.add(new BlockStmt());
+    			return toReturn;
+    		}
     		List<Statement> newStmtList = new ArrayList<Statement>();
     		for(Statement stmt : bstmt.getStmts())
     		{
-    			newStmtList.add(DepthFirstTraversal(stmt, stmtfunc,expfunc));
+    			newStmtList.addAll(DepthFirstTraversal(stmt, stmtfunc,expfunc));
     		}
-    		return new BlockStmt(newStmtList);
+
+			return listify(new BlockStmt(newStmtList));
+    		
     	}
     	else if(statement.getClass()==DoStmt.class)
     	{
     		DoStmt dostmt = (DoStmt)statement;
     		Expression newcond = expfunc.function(dostmt.getCondition());
-    		Statement newbody = DepthFirstTraversal(dostmt.getBody(), stmtfunc,expfunc);
-    		return new DoStmt(newbody, newcond);
+    		List<Statement> newbody = DepthFirstTraversal(dostmt.getBody(), stmtfunc,expfunc);
+    		
+			return listify(new DoStmt(new BlockStmt(newbody), newcond));
+
     	}
     	else if(statement.getClass()==ForeachStmt.class)
     	{
     		ForeachStmt foreachstmt = (ForeachStmt) statement;
-    		Statement newbody = DepthFirstTraversal(foreachstmt.getBody(), stmtfunc,expfunc);
+    		List<Statement> newbody = DepthFirstTraversal(foreachstmt.getBody(), stmtfunc,expfunc);
     		Expression newiterable = expfunc.function(foreachstmt.getIterable());
     		VariableDeclarationExpr newvde = (VariableDeclarationExpr)expfunc.function(foreachstmt.getVariable());
-    		return new ForeachStmt(newvde, newiterable, newbody);
+    		
+    		return listify(new ForeachStmt(newvde, newiterable, new BlockStmt(newbody)));
     	}
     	else if(statement.getClass()==ForStmt.class)
     	{
@@ -84,29 +93,36 @@ public class DFS {
     		{
     			newupdate.add(expfunc.function(e));
     		}
-    		Statement newbody = DepthFirstTraversal(forstmt.getBody(), stmtfunc,expfunc);
-    		return new ForStmt(newinit, newcompare, newupdate, newbody);
+    		List<Statement> newbody = DepthFirstTraversal(forstmt.getBody(), stmtfunc,expfunc);
+    		
+			return listify((new ForStmt(newinit, newcompare, newupdate, new BlockStmt(newbody))));
     	}
     	else if(statement.getClass()==IfStmt.class)
     	{
     		IfStmt ifstmt = (IfStmt) statement;
     		Expression newcond = expfunc.function(ifstmt.getCondition());
-    		Statement newThenStmt = DepthFirstTraversal(ifstmt.getThenStmt(), stmtfunc,expfunc);
-    		Statement newElseStmt = DepthFirstTraversal(ifstmt.getElseStmt(), stmtfunc,expfunc);
-    		return new IfStmt(newcond, newThenStmt, newElseStmt);
+    		List<Statement> newThenStmt = DepthFirstTraversal(ifstmt.getThenStmt(), stmtfunc,expfunc);
+    		List<Statement> newElseStmt = DepthFirstTraversal(ifstmt.getElseStmt(), stmtfunc,expfunc);
+    		
+    		
+    		return listify(new IfStmt(newcond, new BlockStmt(newThenStmt), new BlockStmt(newElseStmt)));
     	}
     	else if(statement.getClass()==LabeledStmt.class)
     	{
     		LabeledStmt lstmt = (LabeledStmt) statement;
-    		return new LabeledStmt(lstmt.getLabel(), DepthFirstTraversal(lstmt.getStmt(), stmtfunc,expfunc));
+    		List<Statement> dfs = DepthFirstTraversal(lstmt.getStmt(), stmtfunc,expfunc);
+    		if(dfs.size()==1)
+    			return listify(dfs.get(0));
+    		else
+    			return listify(new LabeledStmt(lstmt.getLabel(), new BlockStmt(dfs) ));
     	}
     	else if(statement.getClass()==TryStmt.class)
     	{
     		TryStmt trystmt = (TryStmt) statement;
-    		BlockStmt newtryBlock = (BlockStmt) DepthFirstTraversal(trystmt.getTryBlock(),stmtfunc,expfunc);
-    		BlockStmt newfinallyblock = (BlockStmt) DepthFirstTraversal(trystmt.getFinallyBlock(),stmtfunc,expfunc);
+    		List<Statement> newtryBlock =  DepthFirstTraversal(trystmt.getTryBlock(),stmtfunc,expfunc);
+    		List<Statement> newfinallyblock = DepthFirstTraversal(trystmt.getFinallyBlock(),stmtfunc,expfunc);
     		
-    		return new TryStmt(newtryBlock, trystmt.getCatchs(), newfinallyblock);
+    		return listify(new TryStmt(new BlockStmt(newtryBlock), trystmt.getCatchs(), new BlockStmt(newfinallyblock)));
     	}
     	//TODO: Add other type of statements here
     	else
@@ -115,7 +131,13 @@ public class DFS {
     	}
     }
 	
-	public  Statement DepthFirstTraversal(Statement statement,StatementFunction stmtfunc)
+	public static List<Statement> listify(Statement stmt) {
+		List<Statement> toreturn = new ArrayList<Statement>();
+		toreturn.add(stmt);
+		return toreturn;
+	}
+
+	public  List<Statement> DepthFirstTraversal(Statement statement,StatementFunction stmtfunc)
 	{
 		return DepthFirstTraversal(statement, stmtfunc, new IdentityExpressionFunction());
 	}
@@ -123,7 +145,7 @@ public class DFS {
 	public static class PrintAll implements DFS.StatementFunction {
 
 		@Override
-		public Statement function(Statement s) {
+		public List<Statement> function(Statement s) {
 
 			if(s.getClass()==ExpressionStmt.class)
 			{
@@ -132,17 +154,17 @@ public class DFS {
 			}
 			System.out.println(s.getClass()+" x "+s.toString());
 
-			return s;
+			return listify(s);
 		}
 	}
 	
 	public static class BlockStmtify implements DFS.StatementFunction{
 
 		@Override
-		public Statement function(Statement s) {
+		public List<Statement> function(Statement s) {
 			List<Statement> l = new ArrayList<Statement>();
 			l.add(s);
-			return new BlockStmt(l);
+			return listify(new BlockStmt(l));
 			
 		}
 		
@@ -151,7 +173,7 @@ public class DFS {
 	public static class PrintAssignments implements StatementFunction{
 
 		@Override
-		public Statement function(Statement s) {
+		public List<Statement> function(Statement s) {
 			if(s.getClass()==ExpressionStmt.class)
 			{
 				ExpressionStmt exprstmt = (ExpressionStmt)s;
@@ -161,7 +183,7 @@ public class DFS {
 					System.out.println(e);
 				}
 			}
-			return s;
+			return listify(s);
 		}
 		
 	}
@@ -169,7 +191,7 @@ public class DFS {
 	public static class PrintDeclarations implements StatementFunction{
 
 		@Override
-		public Statement function(Statement s) {
+		public List<Statement> function(Statement s) {
 			if(s.getClass()==ExpressionStmt.class)
 			{
 				ExpressionStmt exprstmt = (ExpressionStmt)s;
@@ -190,7 +212,7 @@ public class DFS {
 					System.out.println(e);
 				}
 			}
-			return s;
+			return listify(s);
 		}
 		
 	}
