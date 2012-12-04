@@ -14,8 +14,8 @@ public class CuPrinter {
 
     public static void main(String[] args) throws Exception {
         // creates an input stream for the file to be parsed
-        FileInputStream in = new FileInputStream("/Users/ravi/Work/sparta/everything-eclipse/sparta-subjects/AndroidMouse/src/my/android/mouse/AndroidMouseActivity.java");
-
+//        FileInputStream in = new FileInputStream("/Users/ravi/Work/sparta/everything-eclipse/sparta-subjects/AndroidMouse/src/my/android/mouse/AndroidMouseActivity.java");
+    	FileInputStream in = new FileInputStream("/Users/ravi/Work/Triceratops/Triceratops/src/instrumentation/DummyClass.java");
         CompilationUnit cu=null;
         try {
             // parse the file
@@ -50,7 +50,7 @@ public class CuPrinter {
             BlockStmt body = n.getBody();
             
             DFS dfs = new DFS();
-            List<Statement> s =  dfs.DepthFirstTraversal(body,  new DFS.PrintDeclarations());
+            List<Statement> s =  dfs.DepthFirstTraversal(body,  new DFS.BlockStmtify());
             System.out.println(s.toString());
                    
         }

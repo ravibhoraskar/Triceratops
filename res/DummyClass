@@ -1,0 +1,12 @@
+package instrumentation;
+
+public class DummyClass {
+	
+	void dummyfunction()
+	{
+		// set
+		((TriceratopsApplication) this.getApplication()).someVariable="foo";
+
+	}
+
+}
