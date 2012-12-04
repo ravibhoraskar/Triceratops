@@ -13,6 +13,8 @@ import japa.parser.ast.body.TypeDeclaration;
 import japa.parser.ast.body.VariableDeclarator;
 import japa.parser.ast.body.VariableDeclaratorId;
 import japa.parser.ast.expr.AssignExpr;
+import japa.parser.ast.expr.BinaryExpr;
+import japa.parser.ast.expr.BinaryExpr.Operator;
 import japa.parser.ast.expr.BooleanLiteralExpr;
 import japa.parser.ast.expr.Expression;
 import japa.parser.ast.expr.FieldAccessExpr;
@@ -20,6 +22,7 @@ import japa.parser.ast.expr.MethodCallExpr;
 import japa.parser.ast.expr.VariableDeclarationExpr;
 import japa.parser.ast.stmt.BlockStmt;
 import japa.parser.ast.stmt.ExpressionStmt;
+import japa.parser.ast.stmt.IfStmt;
 import japa.parser.ast.stmt.Statement;
 import japa.parser.ast.type.ClassOrInterfaceType;
 import japa.parser.ast.type.Type;
@@ -93,11 +96,16 @@ public class Triceratops {
 					MethodCallExpr mce = (MethodCallExpr)e;
 					if(restricedFunctions.contains(mce.getName()))
 					{
-						//Encapsulate in an if statement
+						BinaryExpr cond = new BinaryExpr(globalVariables.getGlobalVar("precondition"), new BooleanLiteralExpr(true), Operator.equals);
+						IfStmt toReturn = new IfStmt(cond, s, null);
+						return DFS.listify(toReturn);
 					}
 					else if(validateFunctions.contains(mce.getName()))
 					{
-						//Set flag to true
+						List<Statement> toreturn = new ArrayList<Statement>();
+						toreturn.add(s);
+						toreturn.add(globalVariables.setGlobalVar("precondition", new BooleanLiteralExpr(true)));
+						return toreturn;
 					}
 					
 				}
