@@ -37,6 +37,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class Triceratops {
 
@@ -81,11 +82,30 @@ public class Triceratops {
         
     }
     
-    public class preCondition implements DFS.StatementFunction
+    /**
+     * Defines a precondition on the DFS. Functions in <i>restrictedFunctions</i>
+     * can't run unless the precondition is true. 
+     * Functions in <i>validateFunction</i> set the precondition to true. 
+     * @author bhora
+     */
+    public static class preCondition implements DFS.StatementFunction
     {
     	List<String> restricedFunctions;
     	List<String> validateFunctions;
     	String name;
+    	
+    	public preCondition(List<String> restrictedFunctions,List<String> validateFunctions, String name) {
+			this.restricedFunctions=restrictedFunctions;
+			this.validateFunctions=validateFunctions;
+			this.name=name;
+		}
+    	public preCondition(List<String> restrictedFunctions,List<String> validateFunctions)
+    	{
+    		this(restrictedFunctions,validateFunctions,"var" + (new Random()).nextInt());
+    	}
+    	
+    	
+    	
 		@Override
 		public List<Statement> function(Statement s) {
 			if(s.getClass()==ExpressionStmt.class)

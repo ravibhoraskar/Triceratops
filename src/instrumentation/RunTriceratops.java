@@ -8,6 +8,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RunTriceratops {
 
@@ -42,7 +44,14 @@ public class RunTriceratops {
 			File out;
 			try {
 				 out = new File(dest.getCanonicalPath()+File.separator+in.getName());
-				 Triceratops.instrumentFile(in, out, new DFS.BlockStmtify());
+				 
+				 List<String> restrictedFunctions = new ArrayList<String>();
+				 restrictedFunctions.add("i");
+				 List<String> validateFunctions = new ArrayList<String>();
+				 validateFunctions.add("leftClick");
+				 validateFunctions.add("rightClick");
+				 Triceratops.instrumentFile(in, out, new Triceratops.preCondition(restrictedFunctions, validateFunctions));
+				 
 			} catch (IOException e) {
 				System.out.println("Destination Invalid. Aborting");
 				System.exit(1);
