@@ -1,5 +1,7 @@
 package instrumentation;
 
+import japa.parser.ast.CompilationUnit;
+import japa.parser.ast.body.MethodDeclaration;
 import japa.parser.ast.expr.AnnotationExpr;
 import japa.parser.ast.expr.AssignExpr;
 import japa.parser.ast.expr.Expression;
@@ -16,6 +18,7 @@ import japa.parser.ast.stmt.IfStmt;
 import japa.parser.ast.stmt.LabeledStmt;
 import japa.parser.ast.stmt.Statement;
 import japa.parser.ast.stmt.TryStmt;
+import japa.parser.ast.visitor.VoidVisitorAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,18 @@ public class DFS {
 	public interface ExpressionFunction {
 		Expression function(Expression e);
 	}
+	
+	/**
+	 * An interface to define a function that modifies the method node of AST.
+	 * Unlike StatementFunction and ExpressionFunction, this does not return
+	 * a method. Instead, it must make whatever changes it wants to the same
+	 * object that is passed to it.
+	 * @author bhora
+	 *
+	 */
+	public interface MethodFunction {
+		void function(MethodDeclaration m);
+	}
     
 	public class IdentityExpressionFunction implements ExpressionFunction {
 		@Override
@@ -38,7 +53,39 @@ public class DFS {
 		
 	}
 	
-
+	public class IdentityMethodFunction implements MethodFunction {
+		@Override
+		public void function(MethodDeclaration m) {
+			
+		}
+		
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public void DepthFirstTraversal(CompilationUnit cu, final StatementFunction stmtfunc,final ExpressionFunction expfunc,final MethodFunction methodfunc)
+	{
+		new VoidVisitorAdapter() {
+			@Override
+	        public void visit(final MethodDeclaration n, final Object arg) {
+	            final BlockStmt body = n.getBody();            
+	            final DFS dfs = new DFS();
+	            final List<Statement> newbody =  dfs.DepthFirstTraversal(body, stmtfunc);
+	            n.setBody(new BlockStmt(newbody));
+	            methodfunc.function(n);
+	        }
+		}.visit(cu, null);
+		return;
+	}
+	
+	public void DepthFirstTraversal(CompilationUnit cu, final StatementFunction stmtfunc, final MethodFunction methodfunc)
+	{
+		DepthFirstTraversal(cu, stmtfunc, new IdentityExpressionFunction(),methodfunc);
+	}
+	
+	public void DepthFirstTraversal(CompilationUnit cu, final StatementFunction stmtfunc)
+	{
+		DepthFirstTraversal(cu, stmtfunc,new IdentityMethodFunction());
+	}
 
 	public List<Statement> DepthFirstTraversal(Statement statement, StatementFunction stmtfunc, ExpressionFunction expfunc)
     {

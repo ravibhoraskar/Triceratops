@@ -5,6 +5,7 @@ import instrumentation.DFS.StatementFunction;
 import japa.parser.JavaParser;
 import japa.parser.ParseException;
 import japa.parser.ast.CompilationUnit;
+import japa.parser.ast.PackageDeclaration;
 import japa.parser.ast.body.BodyDeclaration;
 import japa.parser.ast.body.ClassOrInterfaceDeclaration;
 import japa.parser.ast.body.FieldDeclaration;
@@ -19,6 +20,7 @@ import japa.parser.ast.expr.BooleanLiteralExpr;
 import japa.parser.ast.expr.Expression;
 import japa.parser.ast.expr.FieldAccessExpr;
 import japa.parser.ast.expr.MethodCallExpr;
+import japa.parser.ast.expr.NameExpr;
 import japa.parser.ast.expr.VariableDeclarationExpr;
 import japa.parser.ast.stmt.BlockStmt;
 import japa.parser.ast.stmt.ExpressionStmt;
@@ -37,13 +39,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 
 public class Triceratops {
 
 	
 
-	public static void instrumentFile(File in,File out,DFS.StatementFunction stmtfunc)
+	public static void instrumentFile(File in,File out,DFS.StatementFunction stmtfunc,DFS.MethodFunction methodfunc)
 	{
 		CompilationUnit cu=null;
 		try {
@@ -52,8 +55,8 @@ public class Triceratops {
 		} catch (ParseException | IOException e) {
 			System.err.println("Could not parse file "+in.getName());
 		}
-		
-		new MethodVisitor(stmtfunc).visit(cu,null);
+		DFS dfs = new DFS();
+		dfs.DepthFirstTraversal(cu, stmtfunc,methodfunc);
 		
 		FileWriter writer=null;
 		try {
@@ -66,21 +69,7 @@ public class Triceratops {
 		
 	}
 
-    private static class MethodVisitor extends VoidVisitorAdapter {
-    	private StatementFunction stmtfunc;
-		public MethodVisitor(DFS.StatementFunction stmtfunc) {
-			super();
-    		this.stmtfunc=stmtfunc;
-		}
-        @Override
-        public void visit(MethodDeclaration n, Object arg) {
-            BlockStmt body = n.getBody();            
-            DFS dfs = new DFS();
-            List<Statement> newbody =  dfs.DepthFirstTraversal(body, stmtfunc);
-            n.setBody(new BlockStmt(newbody));
-        }
-        
-    }
+
     
     /**
      * Defines a precondition on the DFS. Functions in <i>restrictedFunctions</i>
@@ -88,7 +77,7 @@ public class Triceratops {
      * Functions in <i>validateFunction</i> set the precondition to true. 
      * @author bhora
      */
-    public static class preCondition implements DFS.StatementFunction
+    public static class preCondition implements DFS.StatementFunction, DFS.MethodFunction
     {
     	List<String> restricedFunctions;
     	List<String> validateFunctions;
@@ -116,7 +105,7 @@ public class Triceratops {
 					MethodCallExpr mce = (MethodCallExpr)e;
 					if(restricedFunctions.contains(mce.getName()))
 					{
-						BinaryExpr cond = new BinaryExpr(globalVariables.getGlobalVar("precondition"), new BooleanLiteralExpr(true), Operator.equals);
+						BinaryExpr cond = new BinaryExpr(globalVariables.getGlobalVar(name), new BooleanLiteralExpr(true), Operator.equals);
 						IfStmt toReturn = new IfStmt(cond, s, null);
 						return DFS.listify(toReturn);
 					}
@@ -124,7 +113,7 @@ public class Triceratops {
 					{
 						List<Statement> toreturn = new ArrayList<Statement>();
 						toreturn.add(s);
-						toreturn.add(globalVariables.setGlobalVar("precondition", new BooleanLiteralExpr(true)));
+						toreturn.add(globalVariables.setGlobalVar(name, new BooleanLiteralExpr(true)));
 						return toreturn;
 					}
 					
@@ -133,6 +122,21 @@ public class Triceratops {
 			
 			//If none of the above is satisfied
 			return DFS.listify(s);
+			
+		}
+		@Override
+		public void function(MethodDeclaration m) {
+			if(restricedFunctions.contains(m.getName()))
+			{
+				BinaryExpr cond = new BinaryExpr(globalVariables.getGlobalVar(name), new BooleanLiteralExpr(true), Operator.equals);
+				IfStmt body = new IfStmt(cond, m.getBody(), null);
+				m.setBody(new BlockStmt(DFS.listify(body)));
+			}
+			else if(validateFunctions.contains(m.getName()))
+			{
+				List<Statement> stmts = m.getBody().getStmts();
+				stmts.add(0, globalVariables.setGlobalVar(name, new BooleanLiteralExpr(true)));
+			}
 			
 		}
     	
@@ -178,7 +182,6 @@ public class Triceratops {
 			FieldAccessExpr target = (FieldAccessExpr) setExpr.getTarget();
 			target.setField(name);
 			
-			System.out.println(target.getClass());
 			return setStmt;
     	}
     	
@@ -200,7 +203,7 @@ public class Triceratops {
     	 * Returns a <i>CompilationUnit</i> corresponding to an Application class, that has getters and setters for
     	 * all the variables in <i>variableList</i>
     	 */
-    	static CompilationUnit getApplicationCU(List<Variable> variableList)
+    	static CompilationUnit getApplicationCU(List<Variable> variableList,String packageName)
     	{
     		
         	FileInputStream in = null;
@@ -219,6 +222,8 @@ public class Triceratops {
     				// TODO Auto-generated catch block
     				e.printStackTrace();
     			}
+    		
+    		cu.setPackage(new PackageDeclaration(new NameExpr(packageName)));
     		ClassOrInterfaceDeclaration clazz = (ClassOrInterfaceDeclaration) cu.getTypes().get(0);
     		
     		
@@ -255,6 +260,6 @@ public class Triceratops {
 //    	System.out.println(globalVariables.getGlobalVar("var"));
 		List<globalVariables.Variable> lv = new ArrayList<globalVariables.Variable>();
 		lv.add(new globalVariables.Variable("foo", "bar"));
-		System.out.println(globalVariables.getApplicationCU(lv));
+		System.out.println(globalVariables.getApplicationCU(lv,"pack"));
     }
 }
