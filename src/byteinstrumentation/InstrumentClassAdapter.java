@@ -11,12 +11,11 @@ public class InstrumentClassAdapter extends ClassVisitor {
     
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String[] signatures, String[] exceptions) {
-        System.out.println("  " + name);
         MethodVisitor mv = cv.visitMethod(access, name, desc, signatures, exceptions);
         if (name.equals("leftClick") || name.equals("rightClick")) {
-            InstrumentMethodAdapter ima = new InstrumentMethodAdapter(api, mv);
-            return ima;
+            mv = new InstrumentMethodAdapter(api, mv);
         }
+        mv = new WrapMethodAdapter(api, mv);
         return mv;
     }
 

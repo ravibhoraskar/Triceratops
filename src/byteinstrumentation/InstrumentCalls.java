@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-import org.objectweb.asmdex.applicationAdapterTest.ApplicationAdapterAddCode;
-import org.ow2.asmdex.*;
+import org.ow2.asmdex.ApplicationReader;
+import org.ow2.asmdex.ApplicationVisitor;
+import org.ow2.asmdex.ApplicationWriter;
+import org.ow2.asmdex.Opcodes;
 
 public class InstrumentCalls {
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) {
         FileOutputStream os = null;
         try {
             int api = Opcodes.ASM4;
