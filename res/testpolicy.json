@@ -1,0 +1,18 @@
+{
+"STATES":["S1","S2"],
+"PERMITTED_METHODS":
+	{"S1":["m1"]},
+"FORBIDDEN_METHODS":
+	{
+	 "_default_":["m5"],
+	 "S2":["m8"]
+	},
+"TRANSITIONS":
+	{
+	 "S1":
+		{
+		 "S2":["m6","m3"],
+		 "S5":["m3","m9"]
+		}
+	}
+}
