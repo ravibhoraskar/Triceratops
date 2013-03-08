@@ -1,11 +1,8 @@
 package byteinstrumentation;
 
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import byteinstrumentation.Triceratops.Precondition;
 
 public class RunTriceratops {
     public static void main(String args[]) throws IOException {
@@ -13,16 +10,19 @@ public class RunTriceratops {
         File inFile = new File(args[0]);
         File outFile = new File(args[1]);
         
-        List<Triceratops.Function> validateFunctions = new ArrayList<>();
-        validateFunctions.add(new Triceratops.Function("Lmy/android/mouse/AndroidMouseActivity;", true, "leftClick", "VLandroid/view/View;"));
-        validateFunctions.add(new Triceratops.Function("Lmy/android/mouse/AndroidMouseActivity;", true, "rightClick", "VLandroid/view/View;"));
+        TriceratopsPolicy tripolicy = TriceratopsPolicy.readJson(new FileReader("res/AndroidMouseActivity.policy"));
         
-        List<Triceratops.Function> restrictedFunctions = new ArrayList<>();
-        restrictedFunctions.add(new Triceratops.Function("Landroid/util/Log;", false, "i", "ILjava/lang/String;Ljava/lang/String;"));
+        // List<Triceratops.Function> validateFunctions = new ArrayList<>();
+        // validateFunctions.add(new Triceratops.Function("Lmy/android/mouse/AndroidMouseActivity;", true, "leftClick", "VLandroid/view/View;"));
+        // validateFunctions.add(new Triceratops.Function("Lmy/android/mouse/AndroidMouseActivity;", true, "rightClick", "VLandroid/view/View;"));
         
-        List<Precondition> conditions = new ArrayList<>();
-        conditions.add(new Precondition(restrictedFunctions, validateFunctions, "clickValidate"));
+        // List<Triceratops.Function> restrictedFunctions = new ArrayList<>();
+        // restrictedFunctions.add(new Triceratops.Function("Landroid/util/Log;", false, "i", "ILjava/lang/String;Ljava/lang/String;"));
         
-        Triceratops.instrumentDex(inFile, outFile, conditions);
+        // List<Precondition> conditions = new ArrayList<>();
+        // conditions.add(new Precondition(restrictedFunctions, validateFunctions, "clickValidate"));
+        
+        Triceratops.instrumentDex(inFile, outFile, tripolicy);
+        System.out.println("Done!");
     }
 }

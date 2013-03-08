@@ -1,0 +1,17 @@
+{
+"STATES":["Denied","Allowed"],
+"PERMITTED_METHODS":
+	{},
+"FORBIDDEN_METHODS":
+	{
+	  "Denied":["static Landroid/util/Log;->i(Ljava/lang/String;Ljava/lang/String;)I"]
+	},
+"TRANSITIONS":
+	{
+	 "Denied":
+		{
+		 "Allowed":["virtual Lmy/android/mouse/AndroidMouseActivity;->leftClick(Landroid/view/View;)V",
+		            "virtual Lmy/android/mouse/AndroidMouseActivity;->rightClick(Landroid/view/View;)V"]
+		}
+	}
+}

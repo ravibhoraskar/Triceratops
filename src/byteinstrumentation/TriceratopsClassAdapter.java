@@ -1,41 +1,69 @@
 package byteinstrumentation;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.ow2.asmdex.ClassVisitor;
 import org.ow2.asmdex.MethodVisitor;
 
 public class TriceratopsClassAdapter extends ClassVisitor {
     private String name;
-    private List<Triceratops.Precondition> conditions;
+    private TriceratopsPolicy tripolicy;
 
-    public TriceratopsClassAdapter(int api, ClassVisitor cv, String name, List<Triceratops.Precondition> conditions) {
+    public TriceratopsClassAdapter(int api, ClassVisitor cv, String name, TriceratopsPolicy tripolicy) {
         super(api, cv);
         this.name = name;
-        this.conditions = conditions;
+        this.tripolicy = tripolicy;
     }
     
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String[] signatures, String[] exceptions) {
         MethodVisitor mv = cv.visitMethod(access, name, desc, signatures, exceptions);
-        for (Triceratops.Precondition precondition : conditions) {
-            mv = new WrapMethodAdapter(api, mv, precondition);
-            
-            for (Triceratops.Function function : precondition.restrictedFunctions) {
-                if (function.owner.equals(this.name) && function.name.equals(name) && function.desc.equals(desc)) {
-                    mv = new CheckValidationMethodAdapter(api, mv, desc, precondition);
-                    break;
+        mv = new WrapMethodAdapter(api, mv, tripolicy);
+        
+        InstrumentHelper helper = new InstrumentHelper(api, mv, desc);
+        
+        TriceratopsPolicy.Function thisfunction = TriceratopsPolicy.function(this.name, name, desc);
+        List<Integer> states;
+        Map<Integer, Integer> stateChanges = new HashMap<>();
+        
+        // if this function is default-denied
+        if (tripolicy.restrictedFunctions.contains(thisfunction)) {
+            states = new ArrayList<>();
+            for (int state : tripolicy.permitted.keySet()) {
+                if (tripolicy.permitted.get(state).contains(thisfunction)) {
+                    states.add(state);
                 }
             }
-            for (Triceratops.Function function : precondition.validateFunctions) {
-                if (function.owner.equals(this.name) && function.name.equals(name) && function.desc.equals(desc)) {
-                    mv = new AddValidationMethodAdapter(api, mv, precondition);
-                    break;
-                }
-            }
-            
+            if (!states.isEmpty())
+                helper.addAdapter(new CheckValidationMethodAdapter(states, CheckValidationMethodAdapter.ValidateType.ALLOW_BY_STATE));
         }
-        return mv;
+        
+        // if this function is denied by state (but default-allowed)
+        states = new ArrayList<>();
+        for (int state : tripolicy.forbidden.keySet()) {
+            if (tripolicy.forbidden.get(state).contains(thisfunction)) {
+                states.add(state);
+            }
+        }
+        if (!states.isEmpty())
+            helper.addAdapter(new CheckValidationMethodAdapter(states, CheckValidationMethodAdapter.ValidateType.DENY_BY_STATE));
+        
+        // apply any state transitions
+        for (int stateFrom : tripolicy.transitions.keySet()) {
+            Map<Integer, List<TriceratopsPolicy.Function>> changeMap =  tripolicy.transitions.get(stateFrom);
+            for (int stateTo : changeMap.keySet()) {
+                if (changeMap.get(stateTo).contains(thisfunction)) {
+                    stateChanges.put(stateFrom, stateTo);
+                }
+            }
+        }
+        if (!stateChanges.isEmpty())
+            helper.addAdapter(new AddValidationMethodAdapter(stateChanges));
+        
+        return helper;
     }
 
 }

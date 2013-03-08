@@ -1,24 +1,42 @@
 package byteinstrumentation;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.ow2.asmdex.MethodVisitor;
 import org.ow2.asmdex.Opcodes;
+import org.ow2.asmdex.structureCommon.Label;
 
-public class AddValidationMethodAdapter extends MethodVisitor implements Opcodes {
-    private Triceratops.Precondition precondition;
+public class AddValidationMethodAdapter implements Opcodes, ValidationAdapter {
+    private Map<Integer, Integer> stateChanges;
 
-    public AddValidationMethodAdapter(int api, MethodVisitor mv, Triceratops.Precondition precondition) {
-        super(api, mv);
-        this.precondition = precondition;
+    public AddValidationMethodAdapter(Map<Integer, Integer> stateChanges) {
+        this.stateChanges = stateChanges;
     }
     
     @Override
-    public void visitMaxs(int maxStack, int maxLocals) {
-        // NOTE: maxLocals parameter is ignored in asmdex
-        mv.visitMaxs(maxStack, maxLocals);
+    public void doValidation(MethodVisitor mv, Label lreturn, Label lnext) {
+        int[] reg = {0, 1};
         
-        mv.visitVarInsn(INSN_CONST_4, 0, 1);
-        mv.visitFieldInsn(INSN_SPUT_BOOLEAN, "Lsparta/triceratops/TriceratopsApplication;", precondition.name, "Z", 0, 0);
-        return;
+        Map<Integer, Label> lchanges = new HashMap<>();
+        
+        mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
+        for (int stateFrom : stateChanges.keySet()) {
+            int stateTo = stateChanges.get(stateFrom);
+            if (!lchanges.containsKey(stateTo))
+                lchanges.put(stateTo, new Label());
+            mv.visitVarInsn(INSN_CONST, reg[1], stateFrom);
+            mv.visitJumpInsn(INSN_IF_EQ, lchanges.get(stateTo), reg[0], reg[1]);
+        }
+        mv.visitJumpInsn(INSN_GOTO, lnext, 0, 0);
+        
+        for (int stateTo : stateChanges.values()) {
+            Label l = lchanges.get(stateTo);
+            mv.visitLabel(l);
+            mv.visitVarInsn(INSN_CONST, reg[0], stateTo);
+            mv.visitFieldInsn(INSN_SPUT, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
+            mv.visitJumpInsn(INSN_GOTO, lnext, 0, 0);
+        }
     }
 
 }
