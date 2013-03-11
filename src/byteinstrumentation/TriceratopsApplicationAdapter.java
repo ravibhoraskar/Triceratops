@@ -37,9 +37,9 @@ public class TriceratopsApplicationAdapter extends ApplicationVisitor implements
         MethodVisitor mv;
         Set<TriceratopsPolicy.Function> fnSet = new HashSet<>();
 
+        // Create class TriceratopsApplication; this is the class that keeps track of current state
         tapp = av.visitClass(ACC_PUBLIC, "Lsparta/triceratops/TriceratopsApplication;", null, "Landroid/app/Application;", null);
         {
-            // Add field to TriceratopsApplication
             fv = tapp.visitField(ACC_PUBLIC + ACC_STATIC, "triceratopsState", "I", null, null);
             fv.visitEnd();
         }
@@ -53,10 +53,10 @@ public class TriceratopsApplicationAdapter extends ApplicationVisitor implements
         }
         tapp.visitEnd();
         
-        // Add method(s) to TriceratopsWrappers
+        // Create class TriceratopsWrappers; this class contains all wrapper functions
         twrap = av.visitClass(ACC_PUBLIC, "Lsparta/triceratops/TriceratopsWrappers;", null, "Ljava/lang/Object;", null);
         
-        // Make a set of all functions that need to be instrumented
+        // Make a set of all functions in our policy file
         fnSet.addAll(tripolicy.restrictedFunctions);
         fnSet.addAll(tripolicy.protectedFunctions);
         fnSet.addAll(tripolicy.transitionFunctions);
@@ -75,6 +75,7 @@ public class TriceratopsApplicationAdapter extends ApplicationVisitor implements
                 mv = twrap.visitMethod(ACC_PUBLIC + ACC_STATIC, fn.getWrapperName(), desc, null, null);
                 mv.visitCode();
                 
+                // Calculate number of registers needed for wrapper function
                 int numparams = Descriptors.numParams(desc);
                 int[] reg = new int[] {0, 1};
                 mv.visitMaxs(numparams + reg.length, 0);

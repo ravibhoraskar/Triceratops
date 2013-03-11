@@ -20,6 +20,7 @@ public class AddValidationMethodAdapter implements Opcodes, ValidationAdapter {
         
         Map<Integer, Label> lchanges = new HashMap<>();
         
+        // Check current state and jump to the proper place
         mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
         for (int stateFrom : stateChanges.keySet()) {
             int stateTo = stateChanges.get(stateFrom);
@@ -30,6 +31,7 @@ public class AddValidationMethodAdapter implements Opcodes, ValidationAdapter {
         }
         mv.visitJumpInsn(INSN_GOTO, lnext, 0, 0);
         
+        // Set the new state
         for (int stateTo : stateChanges.values()) {
             Label l = lchanges.get(stateTo);
             mv.visitLabel(l);

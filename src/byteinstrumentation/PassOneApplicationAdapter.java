@@ -56,12 +56,13 @@ public class PassOneApplicationAdapter extends ApplicationVisitor implements Opc
         public void visitMethodInsn(int opcode, String owner, String name, String desc, int[] arguments) {
             TriceratopsPolicy.Function thisfunction = TriceratopsPolicy.function(owner, name, desc);
             
+            // Only bother with functions in our policy file
             boolean flag = tripolicy.transitionFunctions.contains(thisfunction) 
                     || tripolicy.protectedFunctions.contains(thisfunction)
                     || tripolicy.restrictedFunctions.contains(thisfunction);
             
             if (flag) {
-                thisfunction.setType(opcode);
+                thisfunction.setType(opcode); // Set the call type so that our wrapper calls it properly
             }
         }
     }

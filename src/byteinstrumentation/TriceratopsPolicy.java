@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.ow2.asmdex.Opcodes;
 
@@ -47,8 +49,6 @@ public class TriceratopsPolicy {
         }
         
         public int getType() {
-            if (this.fnType == 0)
-                throw new RuntimeException("Unknown function type:\n\t" + toString());
             return fnType;
         }
         
@@ -160,6 +160,30 @@ public class TriceratopsPolicy {
         return functions.get(fn);
     }
     
+    // Parse a function spec from the policy file into a Function object
+    public static Function parse(String fname) {
+        Pattern fpatt = Pattern.compile("(.+) (.+)->(.+)\\((.*)\\)(.+)");
+        Matcher m = fpatt.matcher(fname);
+        int fntype;
+        if (!m.matches())
+            throw new RuntimeException("Bad function name:\n\t" + fname);
+        String desc = m.group(5) + m.group(4);
+        TriceratopsPolicy.Function fn = TriceratopsPolicy.function(m.group(2), m.group(3), desc);
+        
+        switch(m.group(1)) {
+        case "static":
+            fntype = Opcodes.INSN_INVOKE_STATIC;
+            break;
+        case "virtual":
+            fntype = Opcodes.INSN_INVOKE_VIRTUAL;
+            break;
+        default:
+            throw new RuntimeException("Bad function type specified: " + m.group(1));
+        }
+        fn.setType(fntype);
+        return fn;
+    }
+    
     public static TriceratopsPolicy readJson(Reader jsonData) {
         if (gson == null)
             gson = new Gson();
@@ -176,7 +200,7 @@ public class TriceratopsPolicy {
         // Extract default forbidden methods
         if (tripolicy.FORBIDDEN_METHODS.containsKey(DEFAULT_FORBIDDEN_STATE_NAME)) {
             for (String fname : tripolicy.FORBIDDEN_METHODS.get(DEFAULT_FORBIDDEN_STATE_NAME)) {
-                tripolicy.restrictedFunctions.add(Descriptors.parse(fname));
+                tripolicy.restrictedFunctions.add(parse(fname));
             }
         }
         
@@ -187,7 +211,7 @@ public class TriceratopsPolicy {
             if (tripolicy.FORBIDDEN_METHODS.containsKey(state)) {
                 List<Function> functions = new ArrayList<>();
                 for (String fname : tripolicy.FORBIDDEN_METHODS.get(state)) {
-                    Function fn = Descriptors.parse(fname);
+                    Function fn = parse(fname);
                     tripolicy.protectedFunctions.add(fn);
                     functions.add(fn);
                 }
@@ -197,7 +221,7 @@ public class TriceratopsPolicy {
             if (tripolicy.PERMITTED_METHODS.containsKey(state)) {
                 List<Function> functions = new ArrayList<>();
                 for (String fname : tripolicy.PERMITTED_METHODS.get(state)) {
-                    functions.add(Descriptors.parse(fname));
+                    functions.add(parse(fname));
                 }
                 tripolicy.permitted.put(i, functions);
             }
@@ -207,7 +231,7 @@ public class TriceratopsPolicy {
                 for (String transstate : tripolicy.TRANSITIONS.get(state).keySet()) {
                     List<Function> functions = new ArrayList<>();
                     for (String fname : tripolicy.TRANSITIONS.get(state).get(transstate)) {
-                        Function fn = Descriptors.parse(fname);
+                        Function fn = parse(fname);
                         tripolicy.transitionFunctions.add(fn);
                         functions.add(fn);
                     }

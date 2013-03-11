@@ -21,7 +21,7 @@ public class TriceratopsClassAdapter extends ClassVisitor {
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String[] signatures, String[] exceptions) {
         MethodVisitor mv = cv.visitMethod(access, name, desc, signatures, exceptions);
-        mv = new WrapMethodAdapter(api, mv, tripolicy);
+        mv = new WrapMethodAdapter(api, mv);
         
         InstrumentHelper helper = new InstrumentHelper(api, mv, desc);
         

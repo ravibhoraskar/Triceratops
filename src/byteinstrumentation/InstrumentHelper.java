@@ -7,19 +7,6 @@ import org.ow2.asmdex.MethodVisitor;
 import org.ow2.asmdex.Opcodes;
 import org.ow2.asmdex.structureCommon.Label;
 
-/*
- * require 2 regs
- * 
- * --validation checks--
- * 
- * label return
- * return 0
- * label code
- * 
- * shift params
- * 
- * (code)
- */
 public class InstrumentHelper extends MethodVisitor implements Opcodes {
     
     private static final int[] reg = {0, 1};
@@ -63,8 +50,10 @@ public class InstrumentHelper extends MethodVisitor implements Opcodes {
         Label lcode = new Label();
         
         if (!adapters.isEmpty()) {
+            // We need at least two registers for our instrumentation
             requireTwoRegisters();
             
+            // Apply all the adapters
             for (ValidationAdapter adapter : adapters) {
                 Label lnext = new Label();
                 adapter.doValidation(mv, lreturn, lnext);

@@ -17,9 +17,11 @@ public class Triceratops {
         
         ApplicationReader ar = new ApplicationReader(api, inFile);
         
+        // Pass One: Mark down all the methods whose code we can instrument
         ApplicationVisitor discover = new PassOneApplicationAdapter(api, tripolicy);
         ar.accept(discover, 0);
         
+        // Pass Two: Instrument methods from pass one, wrap any other methods
         ApplicationWriter aw = new ApplicationWriter(ar);
         ApplicationVisitor aa = new TriceratopsApplicationAdapter(api, aw, tripolicy);
         ar.accept(aa,  0);
