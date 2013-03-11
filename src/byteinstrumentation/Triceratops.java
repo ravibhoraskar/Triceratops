@@ -16,6 +16,10 @@ public class Triceratops {
         FileOutputStream os;
         
         ApplicationReader ar = new ApplicationReader(api, inFile);
+        
+        ApplicationVisitor discover = new PassOneApplicationAdapter(api, tripolicy);
+        ar.accept(discover, 0);
+        
         ApplicationWriter aw = new ApplicationWriter(ar);
         ApplicationVisitor aa = new TriceratopsApplicationAdapter(api, aw, tripolicy);
         ar.accept(aa,  0);

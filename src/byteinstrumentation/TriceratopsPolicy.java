@@ -23,6 +23,7 @@ public class TriceratopsPolicy {
         private String desc;
         
         private int fnType;
+        private boolean canInstrument;
         
         private Function(String owner, String name, String desc) {
             this.owner = owner;
@@ -30,6 +31,7 @@ public class TriceratopsPolicy {
             this.desc = desc;
             
             this.fnType = 0;
+            canInstrument = false;
         }
         
         public String getOwner() {
@@ -55,6 +57,14 @@ public class TriceratopsPolicy {
                 throw new RuntimeException("Conflicting invocations detected:\n\t"
                         + toString() + "\n\t" + fnType);
             this.fnType = fnType;
+        }
+        
+        public boolean canInstrument() {
+            return canInstrument;
+        }
+        
+        public void canInstrument(boolean value) {
+            canInstrument = value;
         }
         
         public String getWrapperName() {
