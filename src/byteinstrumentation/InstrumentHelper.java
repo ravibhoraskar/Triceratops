@@ -54,6 +54,7 @@ public class InstrumentHelper extends MethodVisitor implements Opcodes {
             requireTwoRegisters();
             
             // Apply all the adapters
+            mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
             for (ValidationAdapter adapter : adapters) {
                 Label lnext = new Label();
                 adapter.doValidation(mv, lreturn, lnext);

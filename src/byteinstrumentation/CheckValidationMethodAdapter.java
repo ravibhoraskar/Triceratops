@@ -35,7 +35,6 @@ public class CheckValidationMethodAdapter implements Opcodes, ValidationAdapter 
         }
         
         // Check against current state and jump to the proper place if found
-        mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
         for (int state : states) {
             mv.visitVarInsn(INSN_CONST, reg[1], state);
             mv.visitJumpInsn(INSN_IF_EQ, lhitstate, reg[0], reg[1]);

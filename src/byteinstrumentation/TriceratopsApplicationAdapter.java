@@ -85,21 +85,8 @@ public class TriceratopsApplicationAdapter extends ApplicationVisitor implements
                     params[i] = reg.length + i;
                 }
                 
-                mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
-                
-                // store default return for method into our return register: 0 (or equivalent)
-                switch (returnType) {
-                case 'J': // long
-                case 'D': // double
-                    mv.visitVarInsn(INSN_CONST_WIDE, reg[1], 0);
-                    break;
-                case 'V': // void
-                    break;
-                default:
-                    mv.visitVarInsn(INSN_CONST, reg[1], 0);
-                    break;
-                }
-                
+                Label lcall = new Label();
+                Label lzero = new Label();
                 Label lreturn = new Label();
                 
                 // Get the proper validation adapters
@@ -143,13 +130,31 @@ public class TriceratopsApplicationAdapter extends ApplicationVisitor implements
                     adapters.add(new AddValidationMethodAdapter(stateChanges));
                 
                 // Execute the proper validation adapters
+                mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
                 for (ValidationAdapter adapter : adapters) {
                     Label lnext = new Label();
-                    adapter.doValidation(mv, lreturn, lnext);
+                    adapter.doValidation(mv, lzero, lnext);
                     mv.visitLabel(lnext);
                 }
+                mv.visitJumpInsn(INSN_GOTO, lcall, 0, 0);
+                
+                // store default return for method into our return register: 0 (or equivalent)
+                mv.visitLabel(lzero);
+                switch (returnType) {
+                case 'J': // long
+                case 'D': // double
+                    mv.visitVarInsn(INSN_CONST_WIDE, reg[1], 0);
+                    break;
+                case 'V': // void
+                    break;
+                default:
+                    mv.visitVarInsn(INSN_CONST, reg[1], 0);
+                    break;
+                }
+                mv.visitJumpInsn(INSN_GOTO, lreturn, 0, 0);
                 
                 // Call the wrapped method
+                mv.visitLabel(lcall);
                 mv.visitMethodInsn(fntype, fn.getOwner(), fn.getName(), fn.getDesc(), params);
                 
                 // Move return value (if any) into our return register

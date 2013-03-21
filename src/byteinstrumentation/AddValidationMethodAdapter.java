@@ -21,7 +21,6 @@ public class AddValidationMethodAdapter implements Opcodes, ValidationAdapter {
         Map<Integer, Label> lchanges = new HashMap<>();
         
         // Check current state and jump to the proper place
-        mv.visitFieldInsn(INSN_SGET, "Lsparta/triceratops/TriceratopsApplication;", "triceratopsState", "I", reg[0], 0);
         for (int stateFrom : stateChanges.keySet()) {
             int stateTo = stateChanges.get(stateFrom);
             if (!lchanges.containsKey(stateTo))
