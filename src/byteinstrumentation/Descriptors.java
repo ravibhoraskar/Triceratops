@@ -32,7 +32,6 @@ public class Descriptors {
     
     // Get index of next parameter in description string
     public static int advanceOne(String desc, int index) {
-    	System.out.println(index+" "+desc);
         char c = desc.charAt(index);
         
         if (c == 'L') {
